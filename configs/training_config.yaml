@@ -1,0 +1,145 @@
+# LoRA Fine-tuning Configuration for Mistral 7B - Go Coding
+
+model:
+  base_model: "mistralai/Mistral-7B-Instruct-v0.2"
+  model_type: "mistral"
+  load_in_8bit: false
+  load_in_4bit: true
+  bnb_4bit_compute_dtype: "float16"
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_use_double_quant: true
+
+lora:
+  # LoRA hyperparameters
+  r: 64 # Rank
+  lora_alpha: 128 # Alpha scaling parameter
+  lora_dropout: 0.05 # Dropout probability
+  bias: "none" # Bias training strategy
+  task_type: "CAUSAL_LM" # Task type
+
+  # Target modules for Mistral
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+    - "lm_head"
+
+training:
+  # Training hyperparameters
+  output_dir: "./models/go-coder-lora"
+  num_train_epochs: 3
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 4
+  gradient_checkpointing: true
+
+  # Learning rate
+  learning_rate: 2e-4
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.1
+
+  # Optimization
+  optim: "paged_adamw_32bit"
+  weight_decay: 0.001
+  max_grad_norm: 0.3
+
+  # Training settings
+  fp16: true
+  bf16: false
+  max_steps: -1
+  logging_steps: 10
+  save_steps: 100
+  eval_steps: 100
+  save_total_limit: 3
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+
+  # Memory optimization
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+
+  # DeepSpeed config (optional)
+  deepspeed: null # Set to config file path to enable
+
+data:
+  # Dataset configuration
+  train_dataset: "./data/processed/train.jsonl"
+  eval_dataset: "./data/processed/eval.jsonl"
+  test_dataset: "./data/processed/test.jsonl"
+
+  # Data processing
+  max_length: 2048
+  padding: true
+  truncation: true
+
+  # Data splits
+  train_split: 0.8
+  eval_split: 0.1
+  test_split: 0.1
+
+  # Prompt template for Go coding
+  prompt_template: |
+    <s>[INST] You are an expert Go programmer. {instruction} [/INST]
+    {response}</s>
+
+generation:
+  # Claude API settings for data generation
+  claude_model: "claude-3-5-sonnet-20241022"
+  max_tokens: 4096
+  temperature: 0.7
+
+  # Generation topics for Go expertise
+  topics:
+    - "Go fundamentals and syntax"
+    - "Concurrency patterns (goroutines, channels)"
+    - "Error handling best practices"
+    - "Interface design and composition"
+    - "Testing and benchmarking"
+    - "Package management and modules"
+    - "Web development with Go"
+    - "Database interactions"
+    - "Performance optimization"
+    - "Security best practices"
+    - "Design patterns in Go"
+    - "Microservices architecture"
+    - "gRPC and protocol buffers"
+    - "CLI tool development"
+    - "Docker and Kubernetes integration"
+
+  # Number of examples to generate per topic
+  examples_per_topic: 100
+
+  # Quality control
+  validate_code: true
+  min_code_length: 50
+  max_code_length: 500
+
+wandb:
+  # Weights & Biases configuration
+  project: "go-coder-lora"
+  entity: null # Set your W&B entity
+  name: "mistral-7b-go-lora"
+  tags:
+    - "mistral-7b"
+    - "lora"
+    - "go"
+    - "knowledge-distillation"
+
+evaluation:
+  # Evaluation metrics
+  metrics:
+    - "perplexity"
+    - "bleu"
+    - "rouge"
+    - "code_validity"
+    - "syntax_correctness"
+
+  # Benchmark datasets
+  benchmarks:
+    - "humaneval-go" # If available
+    - "custom-go-problems"
